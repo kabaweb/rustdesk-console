@@ -107,7 +107,7 @@ export class OidcController {
    * OIDC提供商授权完成后重定向到此端点
    * 交换授权码获取令牌，更新授权状态
    * - 客户端登录：返回成功页面
-   * - Web前端登录：设置HttpOnly Cookie并重定向到前端
+   * - Web前端登录：返回包含脚本的页面，脚本根据rememberMe存储token后跳转
    *
    * @param req Express请求对象
    * @param res Express响应对象
@@ -127,23 +127,25 @@ export class OidcController {
       const result = await this.oidcService.handleCallback(callbackUrl);
 
       if (result.isWebLogin) {
-        // Web前端登录：设置HttpOnly Cookie并重定向
-        const cookieOptions = {
-          httpOnly: true,
-          secure: this.configService.get<string>('NODE_ENV') === 'production',
-          sameSite: 'lax' as const,
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7天
-          path: '/',
-        };
+        // Web前端登录：返回包含脚本的页面，存储token后跳转
+        const html = this.successHtml
+          .replace('{{title}}', '认证成功')
+          .replace('{{message}}', '您已成功登录，正在跳转...')
+          .replace(/{{token}}/g, escapeHtml(result.accessToken!))
+          .replace(/{{callbackUrl}}/g, escapeHtml(result.frontendRedirectUrl!));
 
-        res.cookie('access_token', result.accessToken!, cookieOptions);
-
-        // 重定向到前端
-        res.redirect(result.frontendRedirectUrl!);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
       } else {
         // 客户端登录：返回成功页面
+        const html = this.successHtml
+          .replace('{{title}}', '认证成功')
+          .replace('{{message}}', '您已成功登录，可以关闭此窗口返回应用。')
+          .replace(/{{token}}/g, '')
+          .replace(/{{callbackUrl}}/g, '');
+
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.send(this.successHtml);
+        res.send(html);
       }
     } catch (err: unknown) {
       const message =
