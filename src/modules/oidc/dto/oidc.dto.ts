@@ -22,15 +22,17 @@ export class OidcAuthRequestDto {
   @IsString()
   op: string; // OIDC 提供商标识，如 oidc/google
 
+  @IsOptional()
   @IsString()
-  id: string; // 设备ID
+  id?: string; // 设备ID（客户端特有字段）
 
+  @IsOptional()
   @IsString()
-  uuid: string; // 设备UUID
+  uuid?: string; // 设备UUID（客户端特有字段）
 
   @ValidateNested()
   @Type(() => DeviceInfoDto)
-  deviceInfo: DeviceInfoDto; // 设备信息
+  deviceInfo: DeviceInfoDto; // 设备信息（必填）
 
   @IsOptional()
   @IsUrl({

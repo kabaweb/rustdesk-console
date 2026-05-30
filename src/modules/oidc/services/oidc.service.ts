@@ -21,6 +21,7 @@ import { User, UserStatus } from '../../user/entities/user.entity';
 import { OidcAuthRequestDto } from '../dto/oidc.dto';
 import { LoginResponse } from '../../../common/interfaces';
 import { AuthTokenService } from '../../auth/services/auth-token.service';
+import { AuthDeviceService } from '../../auth/services/auth-device.service';
 
 /**
  * OIDC配置接口
@@ -118,6 +119,7 @@ export class OidcService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private authTokenService: AuthTokenService,
+    private deviceService: AuthDeviceService,
     private configService: ConfigService,
   ) {}
 
@@ -244,12 +246,12 @@ export class OidcService {
       code,
       op,
       providerType: provider.type,
-      deviceId: id,
-      deviceUuid: uuid,
+      deviceId: id ?? undefined,
+      deviceUuid: uuid ?? undefined,
       deviceInfo: JSON.stringify(deviceInfo),
       redirectUri,
       state,
-      nonce: nonce ?? null,
+      nonce: nonce ?? undefined,
       codeVerifier,
       frontendRedirectUrl,
       status: OidcAuthStatus.PENDING,
@@ -361,6 +363,18 @@ export class OidcService {
 
       // 查找或创建本地用户
       const user = await this.findOrCreateUser(userInfo, providerName);
+
+      // 创建或更新设备记录（参考 auth.service.ts 实现）
+      if (authState.deviceId || authState.deviceUuid) {
+        await this.deviceService.createOrUpdateDevice(
+          user.guid,
+          authState.deviceId,
+          authState.deviceUuid,
+          authState.deviceInfo
+            ? (JSON.parse(authState.deviceInfo) as Record<string, unknown>)
+            : undefined,
+        );
+      }
 
       // 生成JWT Token
       const accessToken = await this.generateTokenForUser(
