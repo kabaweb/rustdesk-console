@@ -1,3 +1,27 @@
+# [1.4.0](https://github.com/databk/rustdesk-console/compare/1.3.0...1.4.0) (2026-06-06)
+
+
+### Bug Fixes
+
+* add validation decorators to StrategyQueryDto ([#108](https://github.com/databk/rustdesk-console/issues/108)) ([0e64942](https://github.com/databk/rustdesk-console/commit/0e6494276b979e7e4ee381c11d266de24ba63158))
+* correct is_admin query parameter handling in admin users API ([#122](https://github.com/databk/rustdesk-console/issues/122)) ([ea8f3da](https://github.com/databk/rustdesk-console/commit/ea8f3da73678dac7642e287363c5e08abbf488ec))
+* return full API path for avatar field ([#117](https://github.com/databk/rustdesk-console/issues/117)) ([af98ebf](https://github.com/databk/rustdesk-console/commit/af98ebfb6e823074529beefd35d5d3b61f1013bd))
+* unify login response type field to email_check for client compatibility ([#118](https://github.com/databk/rustdesk-console/issues/118)) ([9fa36fc](https://github.com/databk/rustdesk-console/commit/9fa36fc6a79f890b1b5c361ee6100d16a90bbc3c))
+* **user:** specify varchar type for avatar column ([#115](https://github.com/databk/rustdesk-console/issues/115)) ([dd7fb10](https://github.com/databk/rustdesk-console/commit/dd7fb10f89ada59baa79be17ad79a314988d0ab8))
+
+
+### Features
+
+* add admin users API for management-side user queries ([#119](https://github.com/databk/rustdesk-console/issues/119)) ([92682d1](https://github.com/databk/rustdesk-console/commit/92682d1d668652fbcf3ee9c8355b9bea8778d63e))
+* add change password API for current user ([#114](https://github.com/databk/rustdesk-console/issues/114)) ([ae6c2f6](https://github.com/databk/rustdesk-console/commit/ae6c2f6e1d993c2adc43a6fe682f111e2c6b03f3))
+* add strategy delivery via heartbeat ([#100](https://github.com/databk/rustdesk-console/issues/100)) ([015b489](https://github.com/databk/rustdesk-console/commit/015b48962a1f428924f24314a29cc9929f967694))
+* add user avatar upload and management ([#111](https://github.com/databk/rustdesk-console/issues/111)) ([58af9fa](https://github.com/databk/rustdesk-console/commit/58af9fa3cab151338d5e4db2ca5e52a3507acfed))
+* **auth:** implement complete 2FA user setup flow and remove tfa_url ([#110](https://github.com/databk/rustdesk-console/issues/110)) ([8eabe87](https://github.com/databk/rustdesk-console/commit/8eabe87acc6446bf767cbc9a23c7224bdd0e447f))
+* **strategy:** add assignments query API ([#113](https://github.com/databk/rustdesk-console/issues/113)) ([cb50e41](https://github.com/databk/rustdesk-console/commit/cb50e41bb14430105833b845c54dfa00558dace9))
+* update default admin account creation logic ([#120](https://github.com/databk/rustdesk-console/issues/120)) ([6899302](https://github.com/databk/rustdesk-console/commit/68993029699c1e1891a30aa6b5547b5e32e681e6))
+
+
+
 # [1.3.0](https://github.com/databk/rustdesk-console/compare/1.2.0...1.3.0) (2026-05-30)
 
 
