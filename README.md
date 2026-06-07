@@ -176,6 +176,7 @@ docker run -d \
   --name rustdesk-console \
   --network rustdesk-net \
   -e JWT_SECRET=your-super-secret-key \
+  -v ./data:/data \
   databk/rustdesk-console:latest
 
 # Start the frontend
@@ -243,7 +244,7 @@ Copy `.env.example` to `.env` and configure the variables.
 
 ## 🗄️ Database
 
-The application uses **SQLite** as the default database engine (file: `rustdesk.db` in project root), managed by **TypeORM 0.3**.
+The application uses **SQLite** as the default database engine (file: `rustdesk-console.db` in project root, or `/data/rustdesk-console.db` in Docker), managed by **TypeORM 0.3**.
 
 **Core Data Models Include:**
 - User accounts, tokens & avatars
