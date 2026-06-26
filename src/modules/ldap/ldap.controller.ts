@@ -78,13 +78,12 @@ export class LdapController {
           dto.searchFilter ||
           savedConfig?.searchFilter ||
           '(sAMAccountName={{username}})',
-        searchAttributes:
-          savedConfig?.searchAttributes || [
-            'dn',
-            'sAMAccountName',
-            'mail',
-            'displayName',
-          ],
+        searchAttributes: savedConfig?.searchAttributes || [
+          'dn',
+          'sAMAccountName',
+          'mail',
+          'displayName',
+        ],
         groupSearchBase: savedConfig?.groupSearchBase || '',
         groupSearchFilter: savedConfig?.groupSearchFilter || '',
         adminGroups: savedConfig?.adminGroups || [],

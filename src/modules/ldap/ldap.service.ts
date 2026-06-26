@@ -389,7 +389,7 @@ export class LdapService {
         const user = new User();
         user.guid = userGuid;
         user.username = finalUsername;
-        user.email = (ldapUserInfo.email || null) as string;
+        user.email = ldapUserInfo.email || null;
         user.password = null as unknown as string;
         user.status = UserStatus.ACTIVE;
         user.isAdmin = this.isAdminByGroups(

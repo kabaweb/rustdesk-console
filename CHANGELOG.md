@@ -1,3 +1,15 @@
+## [1.5.1](https://github.com/databk/rustdesk-console/compare/1.5.0...1.5.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* map os field to standardized platform constants in /ab/peers response ([#178](https://github.com/databk/rustdesk-console/issues/178)) ([c1b0d67](https://github.com/databk/rustdesk-console/commit/c1b0d676717d7d93631d9d0358380d63d328775d)), closes [#175](https://github.com/databk/rustdesk-console/issues/175)
+* merge saved LDAP config when testing connection ([#180](https://github.com/databk/rustdesk-console/issues/180)) ([7390ca5](https://github.com/databk/rustdesk-console/commit/7390ca54a364c7f91933239ac72aeed6b68774d8))
+* specify varchar type for User.email column ([#181](https://github.com/databk/rustdesk-console/issues/181)) ([924bcda](https://github.com/databk/rustdesk-console/commit/924bcdaf6834b7face280e931db0070878767069))
+* store null instead of empty string for user email to avoid unique constraint violation ([#176](https://github.com/databk/rustdesk-console/issues/176)) ([cff06b7](https://github.com/databk/rustdesk-console/commit/cff06b77fbf009eab533730935f542ee8bc83395)), closes [#173](https://github.com/databk/rustdesk-console/issues/173)
+
+
+
 # [1.5.0](https://github.com/databk/rustdesk-console/compare/1.4.1...1.5.0) (2026-06-14)
 
 
@@ -73,28 +85,6 @@
 * **oidc:** add dual protocol support for OIDC and OAuth2 providers ([#94](https://github.com/databk/rustdesk-console/issues/94)) ([d636603](https://github.com/databk/rustdesk-console/commit/d6366038c3f46a82d2f836277b5ef783744dca32)), closes [#5](https://github.com/databk/rustdesk-console/issues/5)
 * **oidc:** add token storage logic for web login callback ([#99](https://github.com/databk/rustdesk-console/issues/99)) ([778680b](https://github.com/databk/rustdesk-console/commit/778680b013eec5cde00a3a5b078364ce56d32825))
 * **oidc:** add web frontend login support with cookie-based authentication ([#96](https://github.com/databk/rustdesk-console/issues/96)) ([ebe01d5](https://github.com/databk/rustdesk-console/commit/ebe01d57a9dfb79a4a34db4af7de60f70bcd4d3a))
-
-
-
-# [1.2.0](https://github.com/databk/rustdesk-console/compare/1.1.0...1.2.0) (2026-05-17)
-
-
-### Bug Fixes
-
-* **dashboard:** resolve device ID to numeric id from peers table ([#33](https://github.com/databk/rustdesk-console/issues/33)) ([54bd9d1](https://github.com/databk/rustdesk-console/commit/54bd9d183913701d93388356e3f3b0bfbc36c7da))
-* **dashboard:** resolve device name to hostname from sysinfos table ([#34](https://github.com/databk/rustdesk-console/issues/34)) ([0d81f31](https://github.com/databk/rustdesk-console/commit/0d81f312faf50690d1594a712339e80bd75fa3f4))
-* handle JSON parsing for file audit data in statistics ([#32](https://github.com/databk/rustdesk-console/issues/32)) ([84fd24c](https://github.com/databk/rustdesk-console/commit/84fd24c8f1c45fc29555b19e2416daf2de3ee589))
-* resolve eslint errors across multiple modules ([#40](https://github.com/databk/rustdesk-console/issues/40)) ([37802d1](https://github.com/databk/rustdesk-console/commit/37802d13223c25aa1069aa53561c17e308d23c56))
-* **throttler:** resolve rate limiting double counting issue ([#35](https://github.com/databk/rustdesk-console/issues/35)) ([931d209](https://github.com/databk/rustdesk-console/commit/931d209ab413ef1ad748a98062edab8dcc96a9d9))
-
-
-### Features
-
-* add dashboard API for statistics and analytics ([#31](https://github.com/databk/rustdesk-console/issues/31)) ([e0d5a07](https://github.com/databk/rustdesk-console/commit/e0d5a07e1301e65f1105cbf11606d606903f1871))
-* add device_group_guid parameter to peer query ([#37](https://github.com/databk/rustdesk-console/issues/37)) ([d685cb8](https://github.com/databk/rustdesk-console/commit/d685cb85a2746bc7702cb1d7cd5f25644179c969))
-* **audit:** enhance file audit query with advanced filters ([#38](https://github.com/databk/rustdesk-console/issues/38)) ([ecf3845](https://github.com/databk/rustdesk-console/commit/ecf38455a539e14ebdfc2dd23cb6b9cf84b68e41))
-* **security:** Implement JTI Token Blacklist Mechanism ([#36](https://github.com/databk/rustdesk-console/issues/36)) ([16e3b6f](https://github.com/databk/rustdesk-console/commit/16e3b6f8ef069180581511de4438431bd1558914))
-* **settings:** add SMTP configuration management API with generic settings table ([#24](https://github.com/databk/rustdesk-console/issues/24)) ([c5e3c67](https://github.com/databk/rustdesk-console/commit/c5e3c671a659fb2626b2ef17737de717d40a660b))
 
 
 
