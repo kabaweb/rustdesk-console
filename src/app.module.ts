@@ -39,6 +39,9 @@ import { LdapModule } from './modules/ldap/ldap.module';
 import { StrategyModule } from './modules/strategy/strategy.module';
 import { Strategy } from './modules/strategy/entities/strategy.entity';
 import { UpdateCheckModule } from './modules/update-check/update-check.module';
+import { NexusModule } from './modules/nexus/nexus.module';
+import { NexusToken } from './modules/nexus/entities/nexus-token.entity';
+import { NexusBuild } from './modules/nexus/entities/nexus-build.entity';
 
 /**
  * 应用根模块
@@ -98,6 +101,8 @@ import { UpdateCheckModule } from './modules/update-check/update-check.module';
         SystemSetting,
         ActiveConnection,
         Strategy,
+        NexusToken,
+        NexusBuild,
       ],
       synchronize: true,
       logging: false,
@@ -116,6 +121,7 @@ import { UpdateCheckModule } from './modules/update-check/update-check.module';
     LdapModule,
     StrategyModule,
     UpdateCheckModule,
+    NexusModule,
   ],
   providers: [
     {
