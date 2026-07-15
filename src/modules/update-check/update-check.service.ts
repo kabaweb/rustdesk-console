@@ -17,8 +17,7 @@ import {
   UpdateCheckResponse,
 } from './dto/update-check.dto';
 
-const UPDATE_API_URL =
-  'https://api.databk.top/v1/update/check';
+const UPDATE_API_URL = 'https://api.databk.top/v1/update/check';
 
 /**
  * 更新检查服务

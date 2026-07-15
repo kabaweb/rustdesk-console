@@ -8,11 +8,7 @@ import {
 } from 'typeorm';
 
 export type BuildStatus =
-  | 'pending'
-  | 'building'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+  'pending' | 'building' | 'completed' | 'failed' | 'cancelled';
 
 /**
  * Nexus 构建记录实体

@@ -1,3 +1,19 @@
+# [1.6.0](https://github.com/databk/rustdesk-console/compare/1.5.1...1.6.0) (2026-07-15)
+
+
+### Bug Fixes
+
+* make SMTP username and password fields optional ([#194](https://github.com/databk/rustdesk-console/issues/194)) ([eae647c](https://github.com/databk/rustdesk-console/commit/eae647c464ddc08019c4f7063e7cd425ec7503c1)), closes [#193](https://github.com/databk/rustdesk-console/issues/193)
+* **update-check:** fix update check API URL and package.json path issues ([#207](https://github.com/databk/rustdesk-console/issues/207)) ([1d1bc6e](https://github.com/databk/rustdesk-console/commit/1d1bc6e92ec881c88d2c32ab129dba81cf686fad))
+
+
+### Features
+
+* add nexus module for custom client generation ([#192](https://github.com/databk/rustdesk-console/issues/192)) ([a8c0fcf](https://github.com/databk/rustdesk-console/commit/a8c0fcfede80ee2d5a591e283361540ddfa1edb3))
+* add update check module ([#182](https://github.com/databk/rustdesk-console/issues/182)) ([b952d41](https://github.com/databk/rustdesk-console/commit/b952d414071635675c328ce22cbbb1cf4e8ed64a))
+
+
+
 ## [1.5.1](https://github.com/databk/rustdesk-console/compare/1.5.0...1.5.1) (2026-06-26)
 
 
@@ -55,36 +71,6 @@
 * **auth:** implement complete 2FA user setup flow and remove tfa_url ([#110](https://github.com/databk/rustdesk-console/issues/110)) ([8eabe87](https://github.com/databk/rustdesk-console/commit/8eabe87acc6446bf767cbc9a23c7224bdd0e447f))
 * **strategy:** add assignments query API ([#113](https://github.com/databk/rustdesk-console/issues/113)) ([cb50e41](https://github.com/databk/rustdesk-console/commit/cb50e41bb14430105833b845c54dfa00558dace9))
 * update default admin account creation logic ([#120](https://github.com/databk/rustdesk-console/issues/120)) ([6899302](https://github.com/databk/rustdesk-console/commit/68993029699c1e1891a30aa6b5547b5e32e681e6))
-
-
-
-# [1.3.0](https://github.com/databk/rustdesk-console/compare/1.2.0...1.3.0) (2026-05-30)
-
-
-### Bug Fixes
-
-* **audit:** simplify note handling for client requests ([#77](https://github.com/databk/rustdesk-console/issues/77)) ([34c8d23](https://github.com/databk/rustdesk-console/commit/34c8d23713d300a150be459c6be954fd3c8d9eac))
-* **build:** correct OIDC templates path and add to build assets ([#95](https://github.com/databk/rustdesk-console/issues/95)) ([56cb794](https://github.com/databk/rustdesk-console/commit/56cb794b3a2d5c04ebe11d4a85b8e850f0a4d463))
-* change file audit query param from peerId to deviceId ([#68](https://github.com/databk/rustdesk-console/issues/68)) ([7598dd9](https://github.com/databk/rustdesk-console/commit/7598dd923386117609664d1ecaa11adf687e4f10))
-* correct login response type field for TFA check ([#69](https://github.com/databk/rustdesk-console/issues/69)) ([64e3a0f](https://github.com/databk/rustdesk-console/commit/64e3a0f6af4c5aa97fb45b77163d87dbd6e4d518))
-* **oidc:** change login options response format to oidc/{name} ([#91](https://github.com/databk/rustdesk-console/issues/91)) ([e09d0e2](https://github.com/databk/rustdesk-console/commit/e09d0e246bd59e6d782f157755c1edd75ebc85f7))
-* **oidc:** make id, uuid and deviceInfo optional for web frontend login ([#97](https://github.com/databk/rustdesk-console/issues/97)) ([8c59758](https://github.com/databk/rustdesk-console/commit/8c597589bef5bcf6d662ad5393fe9b0cf89ea39d))
-* use dedicated lastHeartbeat field for device online status ([#67](https://github.com/databk/rustdesk-console/issues/67)) ([cfe3e28](https://github.com/databk/rustdesk-console/commit/cfe3e28ba356beb85ebaf9aa126b9ea662f4f17f))
-* use tag_name instead of tag for action-gh-release ([#42](https://github.com/databk/rustdesk-console/issues/42)) ([bd62cf8](https://github.com/databk/rustdesk-console/commit/bd62cf8e40b345928c3af0e884027addef73ed85))
-
-
-### Features
-
-* add force disconnect connection via heartbeat response ([#79](https://github.com/databk/rustdesk-console/issues/79)) ([82fa275](https://github.com/databk/rustdesk-console/commit/82fa275c1b80586b1b5134704fb399d1d90bac17))
-* **audit:** add admin endpoint to update connection audit note ([#78](https://github.com/databk/rustdesk-console/issues/78)) ([981ff0f](https://github.com/databk/rustdesk-console/commit/981ff0f975292ac8b8e234f4491c733e2009e901))
-* **audit:** add ConnType enum and use -1 for unestablished connections ([#75](https://github.com/databk/rustdesk-console/issues/75)) ([ae55042](https://github.com/databk/rustdesk-console/commit/ae5504296ef1fe46b00cb2357c4a5da3ea857bd5))
-* **audit:** add note field to connection audit ([#76](https://github.com/databk/rustdesk-console/issues/76)) ([114db9e](https://github.com/databk/rustdesk-console/commit/114db9e1cc269fecb8a38f198a6d4f667a7e3883))
-* **device:** add batch device status update API ([#56](https://github.com/databk/rustdesk-console/issues/56)) ([3c674a1](https://github.com/databk/rustdesk-console/commit/3c674a1c1a60763c0dc25dcd7685479556de1cee))
-* implement OIDC login with Authorization Code Flow + PKCE ([#70](https://github.com/databk/rustdesk-console/issues/70)) ([6218647](https://github.com/databk/rustdesk-console/commit/6218647973ff8c1100519080c9c4ef46d92ff648)), closes [#71](https://github.com/databk/rustdesk-console/issues/71) [#73](https://github.com/databk/rustdesk-console/issues/73) [#88](https://github.com/databk/rustdesk-console/issues/88)
-* **oidc:** add admin CRUD API for OIDC provider management ([#92](https://github.com/databk/rustdesk-console/issues/92)) ([13901a4](https://github.com/databk/rustdesk-console/commit/13901a4046eaf8a31149ec3e81ceb48fcaec97c9))
-* **oidc:** add dual protocol support for OIDC and OAuth2 providers ([#94](https://github.com/databk/rustdesk-console/issues/94)) ([d636603](https://github.com/databk/rustdesk-console/commit/d6366038c3f46a82d2f836277b5ef783744dca32)), closes [#5](https://github.com/databk/rustdesk-console/issues/5)
-* **oidc:** add token storage logic for web login callback ([#99](https://github.com/databk/rustdesk-console/issues/99)) ([778680b](https://github.com/databk/rustdesk-console/commit/778680b013eec5cde00a3a5b078364ce56d32825))
-* **oidc:** add web frontend login support with cookie-based authentication ([#96](https://github.com/databk/rustdesk-console/issues/96)) ([ebe01d5](https://github.com/databk/rustdesk-console/commit/ebe01d57a9dfb79a4a34db4af7de60f70bcd4d3a))
 
 
 
