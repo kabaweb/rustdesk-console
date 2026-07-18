@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, IsNull, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, In, IsNull, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { isUUID } from 'class-validator';
 import { AddressBookRule, AddressBook, ShareRule } from '../entities';
@@ -28,6 +28,17 @@ interface SharedAddressBookRow {
   info: string | null;
   rule: string | number;
 }
+
+const EXTERNAL_GRANT_EXISTS = `EXISTS (
+  SELECT 1
+  FROM "address_book_rules" "externalRule"
+  WHERE "externalRule"."addressBookGuid" = "addressBook"."guid"
+    AND (
+      "externalRule"."targetGroupId" IS NOT NULL
+      OR "externalRule"."targetUserId" IS NULL
+      OR "externalRule"."targetUserId" <> "addressBook"."owner"
+    )
+)`;
 
 /**
  * 地址簿规则服务
@@ -59,6 +70,7 @@ export class AddressBookRuleService {
 
     private readonly permissionService: AddressBookPermissionService,
     private readonly userGroupService: UserGroupService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -264,6 +276,133 @@ export class AddressBookRuleService {
    * @returns 共享地址簿列表和总数
    */
   async getSharedAddressBooks(userId: string, query: PaginationDto) {
+    return this.getAccessibleAddressBooks(userId, query, false);
+  }
+
+  async getWebSharedAddressBooks(userId: string, query: PaginationDto) {
+    return this.getAccessibleAddressBooks(userId, query, true);
+  }
+
+  async getCustomAddressBooks(userId: string, query: PaginationDto) {
+    const { current = 1, pageSize = 100, name } = query;
+    const skip = (current - 1) * pageSize;
+
+    const queryBuilder = this.addressBookRepository
+      .createQueryBuilder('addressBook')
+      .where('addressBook.owner = :userId', { userId })
+      .andWhere('addressBook.isPersonal = :isPersonal', {
+        isPersonal: false,
+      })
+      .andWhere('addressBook.isShared = :isShared', { isShared: false })
+      .andWhere(`NOT (${EXTERNAL_GRANT_EXISTS})`);
+
+    const trimmedName = name?.trim();
+    if (trimmedName) {
+      queryBuilder.andWhere('addressBook.name LIKE :name', {
+        name: `%${trimmedName}%`,
+      });
+    }
+
+    const total = await queryBuilder.clone().getCount();
+    const addressBooks = await queryBuilder
+      .orderBy('addressBook.name', 'ASC')
+      .addOrderBy('addressBook.guid', 'ASC')
+      .skip(skip)
+      .take(pageSize)
+      .getMany();
+
+    return {
+      total,
+      data: addressBooks.map((addressBook) => ({
+        guid: addressBook.guid,
+        name: addressBook.name || '',
+        note: addressBook.note || '',
+      })),
+    };
+  }
+
+  async addCustomAddressBook(
+    name: string,
+    ownerUserId: string,
+    note?: string,
+    password?: string,
+  ): Promise<string> {
+    return this.createAddressBookProfile(
+      name,
+      ownerUserId,
+      false,
+      note,
+      password,
+    );
+  }
+
+  async updateCustomAddressBook(
+    guid: string,
+    userId: string,
+    name?: string,
+    note?: string,
+  ): Promise<void> {
+    if (name === undefined && note === undefined) {
+      throw new BadRequestException('至少需要更新一个字段');
+    }
+
+    const addressBook = await this.findPrivateCustomAddressBook(guid, userId);
+    if (!addressBook) {
+      throw new NotFoundException('私有自定义地址簿不存在');
+    }
+
+    if (name !== undefined) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        throw new BadRequestException('地址簿名称不能为空');
+      }
+      const existing = await this.addressBookRepository.findOne({
+        where: {
+          name: trimmedName,
+          owner: userId,
+          isPersonal: false,
+        },
+      });
+      if (existing && existing.guid !== guid) {
+        throw new ConflictException('地址簿名称已存在');
+      }
+      addressBook.name = trimmedName;
+    }
+    if (note !== undefined) {
+      addressBook.note = note;
+    }
+
+    await this.addressBookRepository.save(addressBook);
+  }
+
+  async deleteCustomAddressBooks(
+    guids: string[],
+    userId: string,
+  ): Promise<void> {
+    const uniqueGuids = [...new Set(guids)];
+    const addressBooks = await this.addressBookRepository
+      .createQueryBuilder('addressBook')
+      .where('addressBook.guid IN (:...guids)', { guids: uniqueGuids })
+      .andWhere('addressBook.owner = :userId', { userId })
+      .andWhere('addressBook.isPersonal = :isPersonal', {
+        isPersonal: false,
+      })
+      .andWhere('addressBook.isShared = :isShared', { isShared: false })
+      .andWhere(`NOT (${EXTERNAL_GRANT_EXISTS})`)
+      .getMany();
+
+    if (addressBooks.length !== uniqueGuids.length) {
+      throw new NotFoundException('一个或多个私有自定义地址簿不存在');
+    }
+
+    await this.addressBookRepository.delete({ guid: In(uniqueGuids) });
+  }
+
+  private async getAccessibleAddressBooks(
+    userId: string,
+    query: PaginationDto,
+    sharedOnly: boolean,
+  ) {
     const { current = 1, pageSize = 100, name } = query;
     const skip = (current - 1) * pageSize;
 
@@ -289,12 +428,25 @@ export class AddressBookRuleService {
 
     const queryBuilder = this.addressBookRepository
       .createQueryBuilder('addressBook')
-      .innerJoin(
+      .leftJoin(
         AddressBookRule,
         'rule',
-        'rule.addressBookGuid = addressBook.guid',
+        `rule.addressBookGuid = addressBook.guid AND (${subjectConditions.join(
+          ' OR ',
+        )})`,
+        parameters,
       )
-      .where(`(${subjectConditions.join(' OR ')})`, parameters);
+      .where('addressBook.isPersonal = :isPersonal', { isPersonal: false })
+      .andWhere('(addressBook.owner = :userId OR rule.guid IS NOT NULL)', {
+        userId,
+      });
+
+    if (sharedOnly) {
+      queryBuilder.andWhere(
+        `(addressBook.isShared = :isShared OR ${EXTERNAL_GRANT_EXISTS})`,
+        { isShared: true },
+      );
+    }
 
     const trimmedName = name?.trim();
     if (trimmedName) {
@@ -314,7 +466,11 @@ export class AddressBookRuleService {
       .addSelect('addressBook.owner', 'owner')
       .addSelect('addressBook.note', 'note')
       .addSelect('addressBook.info', 'info')
-      .addSelect('MAX(rule.rule)', 'rule')
+      .addSelect(
+        'MAX(CASE WHEN addressBook.owner = :userId THEN :fullControl ELSE rule.rule END)',
+        'rule',
+      )
+      .setParameter('fullControl', ShareRule.FULL_CONTROL)
       .groupBy('addressBook.guid')
       .addGroupBy('addressBook.name')
       .addGroupBy('addressBook.owner')
@@ -349,6 +505,7 @@ export class AddressBookRuleService {
       note: row.note || '',
       rule: Number(row.rule),
       info: row.info ? (JSON.parse(row.info) as Record<string, unknown>) : {},
+      ...(sharedOnly ? { is_owner: row.owner === userId } : {}),
     }));
 
     return { total: Number(totalRow?.total || 0), data };
@@ -371,37 +528,13 @@ export class AddressBookRuleService {
     note?: string,
     password?: string,
   ): Promise<string> {
-    // 检查名称是否已存在
-    const existing = await this.addressBookRepository.findOne({
-      where: { name, owner: ownerUserId, isPersonal: false },
-    });
-
-    if (existing) {
-      throw new ConflictException('地址簿名称已存在');
-    }
-
-    // 创建地址簿
-    const addressBook = this.addressBookRepository.create({
-      guid: uuidv4(),
+    return this.createAddressBookProfile(
       name,
-      owner: ownerUserId,
-      isPersonal: false,
+      ownerUserId,
+      true,
       note,
-      info: password ? JSON.stringify({ password }) : undefined,
-    });
-
-    await this.addressBookRepository.save(addressBook);
-
-    // 自动给创建者添加full权限的规则
-    const rule = this.ruleRepository.create({
-      guid: uuidv4(),
-      addressBookGuid: addressBook.guid,
-      targetUserId: ownerUserId,
-      rule: 3, // full control
-    });
-    await this.ruleRepository.save(rule);
-
-    return addressBook.guid;
+      password,
+    );
   }
 
   /**
@@ -430,9 +563,7 @@ export class AddressBookRuleService {
     password?: string,
     userId?: string,
   ): Promise<void> {
-    const addressBook = await this.addressBookRepository.findOne({
-      where: { guid },
-    });
+    const addressBook = await this.findSharedAddressBook(guid);
 
     if (!addressBook) {
       throw new NotFoundException('地址簿不存在');
@@ -486,17 +617,25 @@ export class AddressBookRuleService {
     }
 
     // 检查名称是否已被其他地址簿使用
-    if (name && name !== addressBook.name) {
+    if (name !== undefined) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        throw new BadRequestException('地址簿名称不能为空');
+      }
       const existing = await this.addressBookRepository.findOne({
-        where: { name, owner: owner || addressBook.owner, isPersonal: false },
+        where: {
+          name: trimmedName,
+          owner: owner || addressBook.owner,
+          isPersonal: false,
+        },
       });
       if (existing && existing.guid !== guid) {
         throw new ConflictException('地址簿名称已存在');
       }
+      addressBook.name = trimmedName;
     }
 
     // 更新字段
-    if (name !== undefined) Object.assign(addressBook, { name });
     if (note !== undefined) Object.assign(addressBook, { note });
     if (owner !== undefined) Object.assign(addressBook, { owner });
     if (password !== undefined) {
@@ -520,10 +659,12 @@ export class AddressBookRuleService {
     guids: string[],
     userId: string,
   ): Promise<void> {
-    for (const guid of guids) {
-      const addressBook = await this.addressBookRepository.findOne({
-        where: { guid },
-      });
+    const uniqueGuids = [...new Set(guids)];
+
+    // 预先验证所有地址簿的存在性和所有权
+    const addressBooks: AddressBook[] = [];
+    for (const guid of uniqueGuids) {
+      const addressBook = await this.findSharedAddressBook(guid);
 
       if (!addressBook) {
         continue; // 跳过不存在的地址簿
@@ -534,10 +675,23 @@ export class AddressBookRuleService {
         throw new ForbiddenException(`无权删除地址簿 '${addressBook.name}'`);
       }
 
-      // 删除地址簿及其关联的规则记录
-      await this.addressBookRepository.delete(guid);
-      await this.ruleRepository.delete({ addressBookGuid: guid });
+      addressBooks.push(addressBook);
     }
+
+    if (addressBooks.length === 0) {
+      return;
+    }
+
+    // 在事务中批量删除地址簿及其关联的规则记录
+    const guidsToDelete = addressBooks.map((ab) => ab.guid);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(AddressBookRule).delete({
+        addressBookGuid: In(guidsToDelete),
+      });
+      await manager.getRepository(AddressBook).delete({
+        guid: In(guidsToDelete),
+      });
+    });
   }
 
   /**
@@ -623,6 +777,69 @@ export class AddressBookRuleService {
   }
 
   // ============ 私有辅助方法 ============
+
+  private async createAddressBookProfile(
+    name: string,
+    ownerUserId: string,
+    isShared: boolean,
+    note?: string,
+    password?: string,
+  ): Promise<string> {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      throw new BadRequestException('地址簿名称不能为空');
+    }
+
+    const existing = await this.addressBookRepository.findOne({
+      where: {
+        name: trimmedName,
+        owner: ownerUserId,
+        isPersonal: false,
+      },
+    });
+    if (existing) {
+      throw new ConflictException('地址簿名称已存在');
+    }
+
+    const addressBook = this.addressBookRepository.create({
+      guid: uuidv4(),
+      name: trimmedName,
+      owner: ownerUserId,
+      isPersonal: false,
+      isShared,
+      note,
+      info: password ? JSON.stringify({ password }) : undefined,
+    });
+    await this.addressBookRepository.save(addressBook);
+    return addressBook.guid;
+  }
+
+  private findPrivateCustomAddressBook(guid: string, userId: string) {
+    return this.addressBookRepository
+      .createQueryBuilder('addressBook')
+      .where('addressBook.guid = :guid', { guid })
+      .andWhere('addressBook.owner = :userId', { userId })
+      .andWhere('addressBook.isPersonal = :isPersonal', {
+        isPersonal: false,
+      })
+      .andWhere('addressBook.isShared = :isShared', { isShared: false })
+      .andWhere(`NOT (${EXTERNAL_GRANT_EXISTS})`)
+      .getOne();
+  }
+
+  private findSharedAddressBook(guid: string) {
+    return this.addressBookRepository
+      .createQueryBuilder('addressBook')
+      .where('addressBook.guid = :guid', { guid })
+      .andWhere('addressBook.isPersonal = :isPersonal', {
+        isPersonal: false,
+      })
+      .andWhere(
+        `(addressBook.isShared = :isShared OR ${EXTERNAL_GRANT_EXISTS})`,
+        { isShared: true },
+      )
+      .getOne();
+  }
 
   /**
    * 将规则转换为响应格式
