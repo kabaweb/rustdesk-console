@@ -1,0 +1,149 @@
+# GitHub Actions workflow to build a customized RustDesk client
+# Place this file in: .github/workflows/build-custom-windows.yml
+# in YOUR fork of rustdesk-generator.
+# Also copy customize/apply.py from the nexus server to the repo root.
+
+name: Build Custom RustDesk (Windows)
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: 'Build request UUID'
+        required: true
+        type: string
+      rustdesk_repo:
+        description: 'RustDesk source repo'
+        required: true
+        type: string
+        default: 'rustdesk/rustdesk'
+      rustdesk_ref:
+        description: 'Git ref to build from'
+        required: true
+        type: string
+        default: 'refs/tags/1.4.9'
+      app_name:
+        description: 'Custom app name'
+        required: false
+        type: string
+        default: 'RustDesk'
+      custom_config:
+        description: 'JSON customization options'
+        required: false
+        type: string
+        default: '{}'
+      os:
+        description: 'Target OS'
+        required: false
+        type: string
+        default: 'windows'
+      arch:
+        description: 'Target architecture'
+        required: false
+        type: string
+        default: 'x86_64'
+
+env:
+  SCITER_RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  FLUTTER_VERSION: "3.24.5"
+  VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
+  VERSION: "1.4.9"
+  APP_NAME: ${{ github.event.inputs.app_name }}
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Export GitHub Actions cache env
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout RustDesk source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: ${{ github.event.inputs.rustdesk_repo }}
+          ref: ${{ github.event.inputs.rustdesk_ref }}
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Checkout customization script
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          path: .generator
+
+      - name: Apply customizations
+        run: |
+          python3 .generator/customize/apply.py '${{ github.event.inputs.custom_config }}'
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      - name: Replace Flutter engine
+        run: |
+          flutter doctor -v
+          flutter precache --windows
+          Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
+          Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
+          mv -Force windows-x64-release/* C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.SCITER_RUST_VERSION }}
+          targets: x86_64-pc-windows-msvc
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d8351fb99eee32 # v2
+        with:
+          prefix-key: windows-2022
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+
+      - name: Install vcpkg dependencies
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        run: |
+          $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"
+        shell: bash
+
+      - name: Build RustDesk
+        run: |
+          python3 build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+
+      - name: Package output
+        shell: bash
+        run: |
+          mkdir -p ./output
+          find ./rustdesk -name '*.exe' -exec cp {} ./output/ \;
+          find ./rustdesk -name '*.dll' -exec cp {} ./output/ \;
+          find ./rustdesk -name '*.so' -exec cp {} ./output/ \;
+          ls -la ./output/
+
+      - name: Upload executables
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.VERSION }}-${{ github.event.inputs.arch }}
+          path: ./output/*
+          retention-days: 7

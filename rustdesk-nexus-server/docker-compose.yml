@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  nexus-server:
+    build: .
+    container_name: rustdesk-nexus
+    restart: unless-stopped
+    ports:
+      - "${NEXUS_PORT:-8090}:${NEXUS_PORT:-8090}"
+    environment:
+      - NEXUS_PORT=${NEXUS_PORT:-8090}
+      - NEXUS_JWT_SECRET=${NEXUS_JWT_SECRET:-change-me}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_OWNER=${GITHUB_OWNER}
+      - GITHUB_REPO=${GITHUB_REPO:-rustdesk-generator}
+      - GITHUB_WORKFLOW_FILE=${GITHUB_WORKFLOW_FILE:-build-custom-windows.yml}
+      - RUSTDESK_REPO=${RUSTDESK_REPO:-rustdesk/rustdesk}
+      - RUSTDESK_REF=${RUSTDESK_REF:-refs/tags/1.4.9}
+      - NEXUS_STORAGE_PATH=/app/artifacts
+      - NEXUS_PUBLIC_URL=${NEXUS_PUBLIC_URL}
+    volumes:
+      - nexus-data:/app/data
+      - nexus-artifacts:/app/artifacts
+
+volumes:
+  nexus-data:
+  nexus-artifacts:
