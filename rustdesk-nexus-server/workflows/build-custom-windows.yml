@@ -115,9 +115,11 @@ jobs:
         run: |
           flutter doctor -v
           flutter precache --windows
+          $enginePath = "C:/hostedtoolcache/windows/flutter/stable-$env:FLUTTER_VERSION-x64/bin/cache/artifacts/engine/$env:ENGINE_DIR"
+          New-Item -ItemType Directory -Force -Path $enginePath
           Invoke-WebRequest -Uri "https://github.com/rustdesk/engine/releases/download/main/$env:ENGINE_ZIP" -OutFile engine.zip
           Expand-Archive -Path engine.zip -DestinationPath engine_extracted
-          Copy-Item -Recurse -Force engine_extracted/* "C:/hostedtoolcache/windows/flutter/stable-$env:FLUTTER_VERSION-x64/bin/cache/artifacts/engine/$env:ENGINE_DIR/"
+          Copy-Item -Recurse -Force engine_extracted/* "$enginePath/"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
