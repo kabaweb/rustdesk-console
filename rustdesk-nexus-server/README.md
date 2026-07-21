@@ -50,7 +50,7 @@ artifacts (.exe, .msi, etc.)     ← disponível para download
 ```bash
 # Fork o repo no GitHub (botão Fork em github.com/databk/rustdesk-generator)
 # Depois clone seu fork:
-git clone https://github.com/SEU_USER/rustdesk-generator.git
+git clone https://github.com/edbminfo/rustdesk-generator.git
 cd rustdesk-generator
 
 # Copie os arquivos deste projeto para dentro do fork:

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # --- SERVIDORES RUSTDESK ---
+  hbbs:
+    container_name: hbbs
+    image: databk/rustdesk-server
+    command: hbbs -k SvejjC0uNtWqYszOegzndJbrgb8WVKrFlHuiU70oHI4=
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    depends_on:
+      - hbbr
+    restart: unless-stopped
+
+  hbbr:
+    container_name: hbbr
+    image: databk/rustdesk-server
+    command: hbbr -k SvejjC0uNtWqYszOegzndJbrgb8WVKrFlHuiU70oHI4=
+    volumes:
+      - ./data:/root
+    network_mode: "host"
+    restart: unless-stopped
+
+  # --- BACKEND DO PAINEL (API) ---
+  rustdesk-console:
+    image: databk/rustdesk-console:latest
+    container_name: rustdesk-console
+    restart: unless-stopped
+    environment:
+      - JWT_SECRET=ABZ5gdRSHpkN0lGuxyCsBE9fUCPY1drhWxBAHdXIEEl
+      - NEXUS_BASE_URL=http://rustdesk-nexus:8090
+    volumes:
+      - ./data:/data
+
+  # --- FRONTEND DO PAINEL (Interface Web) ---
+  rustdesk-console-web:
+    image: databk/rustdesk-console-web:latest
+    container_name: rustdesk-console-web
+    ports:
+      - "21114:80"
+    environment:
+      - BACKEND_URL=http://rustdesk-console:3000
+    depends_on:
+      - rustdesk-console
+    restart: unless-stopped
+
+  # --- SERVIDOR DE GERAÇÃO DE CLIENTES CUSTOMIZADOS ---
+  rustdesk-nexus:
+    image: ghcr.io/edbminfo/rustdesk-nexus:latest
+    container_name: rustdesk-nexus
+    restart: unless-stopped
+    environment:
+      - NEXUS_PORT=8090
+      - NEXUS_JWT_SECRET=ALGUMA_SENHA_SEGURA_AQUI
+      - GITHUB_TOKEN=ghp_SEU_TOKEN_GITHUB
+      - GITHUB_OWNER=edbminfo
+      - GITHUB_REPO=rustdesk-generator
+      - GITHUB_WORKFLOW_FILE=build-custom-windows.yml
+      - RUSTDESK_REPO=edbminfo/bmdesk
+      - RUSTDESK_REF=refs/tags/1.4.11
+      - NEXUS_MAX_BUILDS_PER_MONTH=15
+      - NEXUS_STORAGE_PATH=/app/artifacts
+    volumes:
+      - nexus-data:/app/data
+      - nexus-artifacts:/app/artifacts
+
+volumes:
+  nexus-data:
+  nexus-artifacts:
