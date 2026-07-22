@@ -41,7 +41,8 @@ on:
 env:
   SCITER_RUST_VERSION: "1.75"
   LLVM_VERSION: "15.0.6"
-  FLUTTER_VERSION: "3.24.5"
+  # Match local bmdesk build (Flutter 3.44.x / Dart 3.12). extended_text 15+ needs Dart >=3.7.
+  FLUTTER_VERSION: "3.44.1"
   FLUTTER_RUST_BRIDGE_VERSION: "1.80.1"
   CARGO_EXPAND_VERSION: "1.0.95"
   VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
@@ -117,17 +118,12 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           architecture: x64
 
-      - name: Replace Flutter engine
+      - name: Flutter doctor
         if: github.event.inputs.arch != 'x86'
-        shell: pwsh
+        shell: bash
         run: |
           flutter doctor -v
           flutter precache --windows
-          $enginePath = "C:/hostedtoolcache/windows/flutter/stable-$env:FLUTTER_VERSION-x64/bin/cache/artifacts/engine/$env:ENGINE_DIR"
-          New-Item -ItemType Directory -Force -Path $enginePath
-          Invoke-WebRequest -Uri "https://github.com/rustdesk/engine/releases/download/main/$env:ENGINE_ZIP" -OutFile engine.zip
-          Expand-Archive -Path engine.zip -DestinationPath engine_extracted
-          Copy-Item -Recurse -Force engine_extracted/* "$enginePath/"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
@@ -146,8 +142,6 @@ jobs:
         run: |
           cargo install cargo-expand --version ${{ env.CARGO_EXPAND_VERSION }} --locked
           cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid" --locked
-          # Flutter 3.24.5 ships Dart 3.5.x; extended_text 15+ needs Dart >=3.7
-          sed -i -E 's/extended_text: .*/extended_text: 13.0.0/' flutter/pubspec.yaml
           pushd flutter && flutter pub get && popd
           export PATH="$HOME/.cargo/bin:$USERPROFILE/.cargo/bin:$PATH"
           flutter_rust_bridge_codegen \
