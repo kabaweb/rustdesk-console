@@ -264,16 +264,26 @@ func extractZip(zipPath, destDir string) ([]string, error) {
 	var files []string
 
 	for _, f := range r.File {
+		// Normalize zip entry path; reject path traversal
+		name := filepath.ToSlash(f.Name)
+		name = strings.TrimPrefix(name, "/")
+		if name == "" || strings.HasPrefix(filepath.Base(name), ".") {
+			continue
+		}
+		if strings.Contains(name, "..") {
+			continue
+		}
+
+		target := filepath.Join(destDir, filepath.FromSlash(name))
+
 		if f.FileInfo().IsDir() {
+			os.MkdirAll(target, 0755)
 			continue
 		}
 
-		name := filepath.Base(f.Name)
-		if name == "" || strings.HasPrefix(name, ".") {
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 			continue
 		}
-
-		target := filepath.Join(destDir, name)
 
 		rc, err := f.Open()
 		if err != nil {
@@ -286,11 +296,30 @@ func extractZip(zipPath, destDir string) ([]string, error) {
 			continue
 		}
 
-		io.Copy(out, rc)
+		_, copyErr := io.Copy(out, rc)
 		out.Close()
 		rc.Close()
+		if copyErr != nil {
+			continue
+		}
 
-		files = append(files, name)
+		// Expose top-level files and the main portable exe for download list
+		base := filepath.Base(name)
+		if strings.EqualFold(filepath.Ext(base), ".exe") || !strings.Contains(name, "/") {
+			files = append(files, base)
+		} else if strings.HasSuffix(strings.ToLower(base), ".exe") {
+			files = append(files, base)
+		}
+	}
+
+	// If nested dirs were extracted, also list root-level entries for the panel
+	if len(files) == 0 {
+		entries, _ := os.ReadDir(destDir)
+		for _, e := range entries {
+			if !e.IsDir() {
+				files = append(files, e.Name())
+			}
+		}
 	}
 
 	return files, nil

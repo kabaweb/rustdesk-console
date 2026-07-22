@@ -63,16 +63,15 @@ jobs:
             echo "ENGINE_DIR=windows-x86-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x86" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x86-windows-static" >> $GITHUB_ENV
-            echo "BUILD_ARGS=--portable --32 --skip-portable-pack" >> $GITHUB_ENV
+            echo "BUILD_ARGS=--portable --32" >> $GITHUB_ENV
           else
             echo "RUST_TARGET=x86_64-pc-windows-msvc" >> $GITHUB_ENV
             echo "ENGINE_ZIP=windows-x64-release.zip" >> $GITHUB_ENV
             echo "ENGINE_DIR=windows-x64-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x64" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x64-windows-static" >> $GITHUB_ENV
-            # Match local build: python build.py --flutter [--conn-type ...]
-            # hwcodec/vram disabled — MediaSDK fails on GHA runners
-            echo "BUILD_ARGS=--portable --flutter --skip-portable-pack" >> $GITHUB_ENV
+            # Portable packer bundles exe+dlls+data into one self-extracting installer
+            echo "BUILD_ARGS=--portable --flutter" >> $GITHUB_ENV
           fi
 
       - name: Export GitHub Actions cache env
@@ -209,19 +208,23 @@ jobs:
       - name: Package output
         shell: bash
         run: |
-          # Flutter Windows needs the full Release tree (exe + plugin DLLs + data/)
           mkdir -p ./output
-          ARCH="${{ github.event.inputs.arch }}"
-          if [ "$ARCH" = "x86" ]; then
-            cp -r ./rustdesk/* ./output/ 2>/dev/null || true
-            find . -maxdepth 2 -name 'bmdesk*.exe' -exec cp {} ./output/ \; 2>/dev/null || true
-          else
-            # Entire runner/Release directory
-            cp -a ./rustdesk/. ./output/
+          # Prefer single portable installer (includes all DLLs + data)
+          shopt -s nullglob
+          for f in ./bmdesk*.exe ./bmdesk-*-install.exe ./target/release/rustdesk-portable-packer.exe; do
+            [ -f "$f" ] && cp -f "$f" ./output/
+          done
+          # Fallback: full Flutter Release tree (exe + plugin DLLs + data/)
+          if [ -z "$(ls -A ./output 2>/dev/null)" ]; then
+            if [ -d ./rustdesk ]; then
+              cp -a ./rustdesk/. ./output/
+            elif [ -d "./flutter/build/windows/$FLUTTER_ARCH/runner/Release" ]; then
+              cp -a "./flutter/build/windows/$FLUTTER_ARCH/runner/Release/." ./output/
+            fi
           fi
           echo "=== output tree ==="
           find ./output -type f | head -100
-          ls -la ./output/
+          ls -laR ./output/ | head -80
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
