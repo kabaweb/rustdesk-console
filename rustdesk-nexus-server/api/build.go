@@ -130,7 +130,7 @@ func (h *BuildHandler) triggerGitHubBuild(build *store.Build, req NexusGenerateR
 
 	time.Sleep(5 * time.Second)
 
-	run, err := h.gh.GetLatestRunForRequest(build.UUID)
+	run, err := h.gh.GetLatestRunForRequest(build.UUID, req.OS)
 	if err != nil || run == nil {
 		h.store.UpdateBuild(build.UUID, "building", "[]", "", 0)
 		return

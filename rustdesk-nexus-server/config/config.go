@@ -11,7 +11,7 @@ type Config struct {
 	GitHubToken      string
 	GitHubOwner      string
 	GitHubRepo       string
-	WorkflowFile     string
+	WorkflowPrefix   string
 	RustDeskRepo     string
 	RustDeskRef      string
 	StoragePath      string
@@ -26,7 +26,7 @@ func Load() *Config {
 		GitHubToken:       getEnv("GITHUB_TOKEN", ""),
 		GitHubOwner:       getEnv("GITHUB_OWNER", ""),
 		GitHubRepo:        getEnv("GITHUB_REPO", "rustdesk-generator"),
-		WorkflowFile:      getEnv("GITHUB_WORKFLOW_FILE", "flutter-build-windows.yml"),
+		WorkflowPrefix:    getEnv("GITHUB_WORKFLOW_PREFIX", "build-custom"),
 		RustDeskRepo:      getEnv("RUSTDESK_REPO", "rustdesk/rustdesk"),
 		RustDeskRef:       getEnv("RUSTDESK_REF", "refs/tags/1.4.9"),
 		StoragePath:       getEnv("NEXUS_STORAGE_PATH", "./artifacts"),

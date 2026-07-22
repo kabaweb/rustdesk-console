@@ -11,21 +11,25 @@ import (
 )
 
 type Client struct {
-	token     string
-	owner     string
-	repo      string
-	workflow  string
-	http      *http.Client
+	token    string
+	owner    string
+	repo     string
+	prefix   string
+	http     *http.Client
 }
 
-func New(token, owner, repo, workflow string) *Client {
+func New(token, owner, repo, workflowPrefix string) *Client {
 	return &Client{
-		token:    token,
-		owner:    owner,
-		repo:     repo,
-		workflow: workflow,
-		http:     &http.Client{Timeout: 30 * time.Second},
+		token:  token,
+		owner:  owner,
+		repo:   repo,
+		prefix: workflowPrefix,
+		http:   &http.Client{Timeout: 30 * time.Second},
 	}
+}
+
+func (c *Client) workflowFile(os string) string {
+	return c.prefix + "-" + os + ".yml"
 }
 
 type WorkflowDispatchInput struct {
@@ -62,8 +66,9 @@ type ArtifactsResponse struct {
 }
 
 func (c *Client) DispatchWorkflow(input *WorkflowDispatchInput) error {
+	wf := c.workflowFile(input.OS)
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/workflows/%s/dispatches",
-		c.owner, c.repo, c.workflow)
+		c.owner, c.repo, wf)
 
 	body := map[string]interface{}{
 		"ref": "main",
@@ -98,9 +103,10 @@ func (c *Client) DispatchWorkflow(input *WorkflowDispatchInput) error {
 	return nil
 }
 
-func (c *Client) GetLatestRunForRequest(requestID string) (*WorkflowRun, error) {
+func (c *Client) GetLatestRunForRequest(requestID, os string) (*WorkflowRun, error) {
+	wf := c.workflowFile(os)
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/workflows/%s/runs?per_page=20",
-		c.owner, c.repo, c.workflow)
+		c.owner, c.repo, wf)
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("Authorization", "Bearer "+c.token)

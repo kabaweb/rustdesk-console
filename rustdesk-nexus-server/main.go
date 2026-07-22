@@ -40,7 +40,7 @@ func main() {
 
 	log.Printf("Nexus API server starting on %s", bindAddr)
 	log.Printf("  Storage: %s", cfg.StoragePath)
-	log.Printf("  GitHub: %s/%s (workflow: %s)", cfg.GitHubOwner, cfg.GitHubRepo, cfg.WorkflowFile)
+	log.Printf("  GitHub: %s/%s (workflow prefix: %s)", cfg.GitHubOwner, cfg.GitHubRepo, cfg.WorkflowPrefix)
 	log.Printf("  RustDesk source: %s @ %s", cfg.RustDeskRepo, cfg.RustDeskRef)
 
 	if err := http.ListenAndServe(bindAddr, router); err != nil {

@@ -12,7 +12,7 @@ import (
 func NewRouter(cfg *config.Config, s *store.Store) (http.Handler, *BuildHandler) {
 	var ghClient *github.Client
 	if cfg.GitHubToken != "" && cfg.GitHubOwner != "" && cfg.GitHubRepo != "" {
-		ghClient = github.New(cfg.GitHubToken, cfg.GitHubOwner, cfg.GitHubRepo, cfg.WorkflowFile)
+		ghClient = github.New(cfg.GitHubToken, cfg.GitHubOwner, cfg.GitHubRepo, cfg.WorkflowPrefix)
 	}
 
 	authHandler := NewAuthHandler(cfg, s)
