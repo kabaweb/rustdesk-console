@@ -300,16 +300,13 @@ export class NexusService implements OnModuleInit {
     const nexusToken = await this.getValidNexusToken(userGuid);
     const installId = await this.updateCheckService.getInstallId();
 
-    // aarch64 in the panel = Android build
-    const os = dto.arch === 'aarch64' ? 'android' : 'windows';
-
     const response = await this.fetchNexus('/v1/client/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${nexusToken.nexusToken}`,
       },
-      body: JSON.stringify({ ...dto, os, install_id: installId }),
+      body: JSON.stringify({ ...dto, install_id: installId }),
     });
 
     if (response.status === 401) {

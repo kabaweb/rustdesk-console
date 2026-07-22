@@ -71,6 +71,12 @@ func (h *BuildHandler) Generate(w http.ResponseWriter, r *http.Request) {
 		req.Arch = "x86_64"
 	}
 
+	// Panel sends os=windows + arch=aarch64 → remap to Android build
+	if req.OS == "windows" && req.Arch == "aarch64" {
+		req.OS = "android"
+		req.Arch = "aarch64"
+	}
+
 	appName := ""
 	if req.Custom != nil {
 		if n, ok := req.Custom["app-name"].(string); ok {
