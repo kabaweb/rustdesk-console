@@ -209,14 +209,23 @@ jobs:
       - name: Package output
         shell: bash
         run: |
+          # Flutter Windows needs the full Release tree (exe + plugin DLLs + data/)
           mkdir -p ./output
-          find ./rustdesk -name '*.exe' -exec cp {} ./output/ \;
-          find ./rustdesk -name '*.dll' -exec cp {} ./output/ \;
+          ARCH="${{ github.event.inputs.arch }}"
+          if [ "$ARCH" = "x86" ]; then
+            cp -r ./rustdesk/* ./output/ 2>/dev/null || true
+            find . -maxdepth 2 -name 'bmdesk*.exe' -exec cp {} ./output/ \; 2>/dev/null || true
+          else
+            # Entire runner/Release directory
+            cp -a ./rustdesk/. ./output/
+          fi
+          echo "=== output tree ==="
+          find ./output -type f | head -100
           ls -la ./output/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}-${{ github.event.inputs.arch }}
-          path: ./output/*
+          path: ./output/
           retention-days: 7
