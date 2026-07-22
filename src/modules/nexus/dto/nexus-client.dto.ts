@@ -56,7 +56,7 @@ export class NexusCustomDto {
 
 /** 提交构建请求 DTO */
 export class NexusGenerateDto {
-  @IsIn(['windows'])
+  @IsIn(['windows', 'android'])
   os: string;
 
   @IsIn(['x86_64', 'aarch64', 'x86'])
