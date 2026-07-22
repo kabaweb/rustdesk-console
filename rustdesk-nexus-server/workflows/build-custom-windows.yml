@@ -60,14 +60,16 @@ jobs:
             echo "ENGINE_DIR=windows-x86-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x86" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x86-windows-static" >> $GITHUB_ENV
-            echo "BUILD_ARGS=--portable --32 --skip-portable-pack --hwcodec" >> $GITHUB_ENV
+            echo "BUILD_ARGS=--portable --32 --skip-portable-pack" >> $GITHUB_ENV
           else
             echo "RUST_TARGET=x86_64-pc-windows-msvc" >> $GITHUB_ENV
             echo "ENGINE_ZIP=windows-x64-release.zip" >> $GITHUB_ENV
             echo "ENGINE_DIR=windows-x64-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x64" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x64-windows-static" >> $GITHUB_ENV
-            echo "BUILD_ARGS=--portable --flutter --skip-portable-pack --hwcodec --vram" >> $GITHUB_ENV
+            # Match local build: python build.py --flutter [--conn-type ...]
+            # hwcodec/vram disabled — MediaSDK fails on GHA runners
+            echo "BUILD_ARGS=--portable --flutter --skip-portable-pack" >> $GITHUB_ENV
           fi
 
       - name: Export GitHub Actions cache env
@@ -174,7 +176,12 @@ jobs:
       - name: Build RustDesk
         shell: bash
         run: |
-          python3 build.py $BUILD_ARGS
+          EXTRA_ARGS=""
+          CONN_TYPE=$(python3 -c "import json,sys; c=json.loads(sys.argv[1] or '{}'); print(c.get('conn-type',''))" '${{ github.event.inputs.custom_config }}' 2>/dev/null || true)
+          if [ "$CONN_TYPE" = "incoming" ] || [ "$CONN_TYPE" = "outgoing" ]; then
+            EXTRA_ARGS="--conn-type $CONN_TYPE"
+          fi
+          python3 build.py $BUILD_ARGS $EXTRA_ARGS
           ARCH="${{ github.event.inputs.arch }}"
           if [ "$ARCH" = "x86" ]; then
             mkdir -p rustdesk
