@@ -140,16 +140,18 @@ jobs:
           doNotCache: false
 
       - name: Install vcpkg dependencies
-        run: |
-          ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}
-          export ANDROID_NDK_HOME
-          ./flutter/build_android_deps.sh ${{ matrix.arch.ndk }}
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: ./flutter/build_android_deps.sh ${{ matrix.arch.ndk }}
 
       - name: Build RustDesk native lib
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+          VCPKG_ROOT: /opt/artifacts/vcpkg
+          PKG_CONFIG_ALLOW_CROSS: 1
         run: |
+          set -e
           rustup target add ${{ matrix.arch.target }}
           cargo install cargo-ndk --version 3.1.2 --locked
           case ${{ matrix.arch.target }} in
