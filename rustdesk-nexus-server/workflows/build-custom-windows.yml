@@ -146,12 +146,17 @@ jobs:
         run: |
           cargo install cargo-expand --version ${{ env.CARGO_EXPAND_VERSION }} --locked
           cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid" --locked
+          # Flutter 3.24.5 ships Dart 3.5.x; extended_text 15+ needs Dart >=3.7
+          sed -i -E 's/extended_text: .*/extended_text: 13.0.0/' flutter/pubspec.yaml
           pushd flutter && flutter pub get && popd
-          ~/.cargo/bin/flutter_rust_bridge_codegen \
+          export PATH="$HOME/.cargo/bin:$USERPROFILE/.cargo/bin:$PATH"
+          flutter_rust_bridge_codegen \
             --rust-input ./src/flutter_ffi.rs \
             --dart-output ./flutter/lib/generated_bridge.dart \
-            --c-output ./flutter/macos/Runner/bridge_generated.h
-          cp ./flutter/macos/Runner/bridge_generated.h ./flutter/ios/Runner/bridge_generated.h
+            --c-output ./flutter/windows/runner/bridge_generated.h
+          mkdir -p flutter/macos/Runner flutter/ios/Runner
+          cp -f ./flutter/windows/runner/bridge_generated.h ./flutter/macos/Runner/bridge_generated.h
+          cp -f ./flutter/windows/runner/bridge_generated.h ./flutter/ios/Runner/bridge_generated.h
           ls -la src/bridge_generated*.rs flutter/lib/generated_bridge*.dart
 
       - name: Setup vcpkg
