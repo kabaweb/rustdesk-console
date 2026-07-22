@@ -60,12 +60,14 @@ jobs:
             echo "ENGINE_DIR=windows-x86-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x86" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x86-windows-static" >> $GITHUB_ENV
+            echo "BUILD_ARGS=--portable --32 --skip-portable-pack --hwcodec" >> $GITHUB_ENV
           else
             echo "RUST_TARGET=x86_64-pc-windows-msvc" >> $GITHUB_ENV
             echo "ENGINE_ZIP=windows-x64-release.zip" >> $GITHUB_ENV
             echo "ENGINE_DIR=windows-x64-release" >> $GITHUB_ENV
             echo "FLUTTER_ARCH=x64" >> $GITHUB_ENV
             echo "VCPKG_TRIPLET=x64-windows-static" >> $GITHUB_ENV
+            echo "BUILD_ARGS=--portable --flutter --skip-portable-pack --hwcodec --vram" >> $GITHUB_ENV
           fi
 
       - name: Export GitHub Actions cache env
@@ -104,6 +106,7 @@ jobs:
           version: ${{ env.LLVM_VERSION }}
 
       - name: Install Flutter
+        if: github.event.inputs.arch != 'x86'
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
@@ -111,6 +114,7 @@ jobs:
           architecture: x64
 
       - name: Replace Flutter engine
+        if: github.event.inputs.arch != 'x86'
         shell: pwsh
         run: |
           flutter doctor -v
@@ -145,8 +149,14 @@ jobs:
       - name: Build RustDesk
         shell: bash
         run: |
-          python3 build.py --portable --flutter --skip-portable-pack --hwcodec --vram --target $RUST_TARGET
-          mv "./flutter/build/windows/$FLUTTER_ARCH/runner/Release" ./rustdesk
+          python3 build.py $BUILD_ARGS
+          ARCH="${{ github.event.inputs.arch }}"
+          if [ "$ARCH" = "x86" ]; then
+            mkdir -p rustdesk
+            cp ./resources/RustDesk.exe ./rustdesk/ 2>/dev/null || cp ./target/release/RustDesk.exe ./rustdesk/ 2>/dev/null
+          else
+            mv "./flutter/build/windows/$FLUTTER_ARCH/runner/Release" ./rustdesk
+          fi
 
       - name: Package output
         shell: bash
