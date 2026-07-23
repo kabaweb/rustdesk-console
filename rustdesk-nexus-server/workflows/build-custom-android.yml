@@ -213,11 +213,13 @@ jobs:
               "./flutter/android/app/src/main/jniLibs/$ABI_DIR/librustdesk.so"
           fi
 
-          # Fix AGP8 namespace requirement for older plugins
-          PLUGIN_GRADLE="$HOME/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility-5.4.1/android/build.gradle"
-          if [ -f "$PLUGIN_GRADLE" ] && ! grep -q 'namespace' "$PLUGIN_GRADLE"; then
-            sed -i '/android {/a\    namespace "com.jhomlala.flutter_keyboard_visibility"' "$PLUGIN_GRADLE"
-          fi
+          # Fix AGP8+ namespace requirement for ALL older plugins
+          for plugin_gradle in $(find "$HOME/.pub-cache/hosted/pub.dev" -maxdepth 4 -name "build.gradle" -path "*/android/*" 2>/dev/null); do
+            if ! grep -q 'namespace' "$plugin_gradle" 2>/dev/null; then
+              echo "  Patching namespace: $plugin_gradle"
+              sed -i '/android {/a\    namespace "com.example.missing"' "$plugin_gradle"
+            fi
+          done
 
           pushd flutter
           flutter build apk --release --target-platform ${{ matrix.arch.flutter }} --split-per-abi
@@ -299,11 +301,13 @@ jobs:
             [ -f "$so" ] && mv "$so" "./flutter/android/app/src/main/jniLibs/$dir/librustdesk.so"
           done
 
-          # Fix AGP8 namespace requirement for older plugins
-          PLUGIN_GRADLE="$HOME/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility-5.4.1/android/build.gradle"
-          if [ -f "$PLUGIN_GRADLE" ] && ! grep -q 'namespace' "$PLUGIN_GRADLE"; then
-            sed -i '/android {/a\    namespace "com.jhomlala.flutter_keyboard_visibility"' "$PLUGIN_GRADLE"
-          fi
+          # Fix AGP8+ namespace requirement for ALL older plugins
+          for plugin_gradle in $(find "$HOME/.pub-cache/hosted/pub.dev" -maxdepth 4 -name "build.gradle" -path "*/android/*" 2>/dev/null); do
+            if ! grep -q 'namespace' "$plugin_gradle" 2>/dev/null; then
+              echo "  Patching namespace: $plugin_gradle"
+              sed -i '/android {/a\    namespace "com.example.missing"' "$plugin_gradle"
+            fi
+          done
 
           pushd flutter
           flutter pub get
