@@ -228,6 +228,22 @@ jobs:
             fi
           done
 
+          # uni_links 0.5.1 uses deprecated v1 Android embedding; remove PluginRegistry import + method
+          UNI_PLUGIN="$HOME/.pub-cache/hosted/pub.dev/uni_links-0.5.1/android/src/main/java/name/avioli/unilinks/UniLinksPlugin.java"
+          if [ -f "$UNI_PLUGIN" ]; then
+            echo "  Patching uni_links for v2 embedding"
+            sed -i '/import io.flutter.plugin.common.PluginRegistry/d' "$UNI_PLUGIN"
+            # Delete the registerWith method block (from "public static void registerWith" to matching "}")
+            START=$(grep -n 'public static void registerWith' "$UNI_PLUGIN" | head -1 | cut -d: -f1)
+            if [ -n "$START" ]; then
+              END=$(tail -n +$START "$UNI_PLUGIN" | grep -n '^    }' | head -1 | cut -d: -f1)
+              if [ -n "$END" ]; then
+                END=$((START + END - 1))
+                sed -i "${START},${END}d" "$UNI_PLUGIN"
+              fi
+            fi
+          fi
+
           pushd flutter
           flutter build apk --release --target-platform ${{ matrix.arch.flutter }} --split-per-abi
           popd
@@ -322,6 +338,22 @@ jobs:
               sed -i 's/compileSdkVersion [0-2][0-9]/compileSdkVersion 34/g' "$plugin_gradle"
             fi
           done
+
+          # uni_links 0.5.1 uses deprecated v1 Android embedding; remove PluginRegistry import + method
+          UNI_PLUGIN="$HOME/.pub-cache/hosted/pub.dev/uni_links-0.5.1/android/src/main/java/name/avioli/unilinks/UniLinksPlugin.java"
+          if [ -f "$UNI_PLUGIN" ]; then
+            echo "  Patching uni_links for v2 embedding"
+            sed -i '/import io.flutter.plugin.common.PluginRegistry/d' "$UNI_PLUGIN"
+            # Delete the registerWith method block (from "public static void registerWith" to matching "}")
+            START=$(grep -n 'public static void registerWith' "$UNI_PLUGIN" | head -1 | cut -d: -f1)
+            if [ -n "$START" ]; then
+              END=$(tail -n +$START "$UNI_PLUGIN" | grep -n '^    }' | head -1 | cut -d: -f1)
+              if [ -n "$END" ]; then
+                END=$((START + END - 1))
+                sed -i "${START},${END}d" "$UNI_PLUGIN"
+              fi
+            fi
+          fi
 
           pushd flutter
           flutter pub get
