@@ -213,6 +213,12 @@ jobs:
               "./flutter/android/app/src/main/jniLibs/$ABI_DIR/librustdesk.so"
           fi
 
+          # Fix AGP8 namespace requirement for older plugins
+          PLUGIN_GRADLE="$HOME/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility-5.4.1/android/build.gradle"
+          if [ -f "$PLUGIN_GRADLE" ] && ! grep -q 'namespace' "$PLUGIN_GRADLE"; then
+            sed -i '/android {/a\    namespace "com.jhomlala.flutter_keyboard_visibility"' "$PLUGIN_GRADLE"
+          fi
+
           pushd flutter
           flutter build apk --release --target-platform ${{ matrix.arch.flutter }} --split-per-abi
           popd
@@ -293,7 +299,14 @@ jobs:
             [ -f "$so" ] && mv "$so" "./flutter/android/app/src/main/jniLibs/$dir/librustdesk.so"
           done
 
+          # Fix AGP8 namespace requirement for older plugins
+          PLUGIN_GRADLE="$HOME/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility-5.4.1/android/build.gradle"
+          if [ -f "$PLUGIN_GRADLE" ] && ! grep -q 'namespace' "$PLUGIN_GRADLE"; then
+            sed -i '/android {/a\    namespace "com.jhomlala.flutter_keyboard_visibility"' "$PLUGIN_GRADLE"
+          fi
+
           pushd flutter
+          flutter pub get
           flutter build apk --release --target-platform android-arm64,android-arm,android-x64
           popd
 
