@@ -213,11 +213,18 @@ jobs:
               "./flutter/android/app/src/main/jniLibs/$ABI_DIR/librustdesk.so"
           fi
 
-          # Fix AGP8+ namespace requirement for ALL older plugins
+          # Fix AGP8 compatibility: missing namespace + low compileSdkVersion in old plugins
           for plugin_gradle in $(find "$HOME/.pub-cache/hosted/pub.dev" -maxdepth 4 -name "build.gradle" -path "*/android/*" 2>/dev/null); do
             if ! grep -q 'namespace' "$plugin_gradle" 2>/dev/null; then
               echo "  Patching namespace: $plugin_gradle"
               sed -i '/android {/a\    namespace "com.example.missing"' "$plugin_gradle"
+            fi
+            if ! grep -q 'compileSdk' "$plugin_gradle" 2>/dev/null; then
+              echo "  Patching compileSdk: $plugin_gradle"
+              sed -i '/android {/a\    compileSdkVersion 34' "$plugin_gradle"
+            elif grep -q 'compileSdkVersion [0-2][0-9]' "$plugin_gradle" 2>/dev/null; then
+              echo "  Bumping compileSdk: $plugin_gradle"
+              sed -i 's/compileSdkVersion [0-2][0-9]/compileSdkVersion 34/g' "$plugin_gradle"
             fi
           done
 
@@ -301,11 +308,18 @@ jobs:
             [ -f "$so" ] && mv "$so" "./flutter/android/app/src/main/jniLibs/$dir/librustdesk.so"
           done
 
-          # Fix AGP8+ namespace requirement for ALL older plugins
+          # Fix AGP8 compatibility: missing namespace + low compileSdkVersion in old plugins
           for plugin_gradle in $(find "$HOME/.pub-cache/hosted/pub.dev" -maxdepth 4 -name "build.gradle" -path "*/android/*" 2>/dev/null); do
             if ! grep -q 'namespace' "$plugin_gradle" 2>/dev/null; then
               echo "  Patching namespace: $plugin_gradle"
               sed -i '/android {/a\    namespace "com.example.missing"' "$plugin_gradle"
+            fi
+            if ! grep -q 'compileSdk' "$plugin_gradle" 2>/dev/null; then
+              echo "  Patching compileSdk: $plugin_gradle"
+              sed -i '/android {/a\    compileSdkVersion 34' "$plugin_gradle"
+            elif grep -q 'compileSdkVersion [0-2][0-9]' "$plugin_gradle" 2>/dev/null; then
+              echo "  Bumping compileSdk: $plugin_gradle"
+              sed -i 's/compileSdkVersion [0-2][0-9]/compileSdkVersion 34/g' "$plugin_gradle"
             fi
           done
 
